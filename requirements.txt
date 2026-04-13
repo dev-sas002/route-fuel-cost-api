@@ -1,0 +1,13 @@
+# Runtime dependencies.
+# Transitive pins are left to pip; only direct dependencies are listed here.
+Django==6.0.2
+djangorestframework==3.16.1
+polyline==2.0.4
+python-dotenv==1.2.3
+requests==2.34.2
+
+# PostgreSQL driver. Not needed when DB_ENGINE=sqlite (the default).
+psycopg[binary]==3.3.6
+
+# WSGI server used by the container image.
+gunicorn==26.2.0

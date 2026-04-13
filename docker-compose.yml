@@ -1,0 +1,57 @@
+# One command, no manual steps:
+#
+#     docker compose up --build
+#
+# The web container migrates the database and seeds the fuel-price catalogue on
+# boot, then serves the API on http://localhost:8370/api/.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fuel_routes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Host port 8371 (not 5432) so the stack never collides with a local server.
+    ports:
+      - "8371:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fuel_routes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-docker-compose-dev-key}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1],web}
+      DB_ENGINE: postgres
+      DB_NAME: fuel_routes
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: db
+      DB_PORT: "5432"
+      # With no ORS key the offline provider keeps the stack fully functional.
+      ROUTE_PROVIDER: ${ROUTE_PROVIDER:-api.routing.static.StaticRouteProvider}
+      ORS_API_KEY: ${ORS_API_KEY:-}
+    ports:
+      - "8370:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/api/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

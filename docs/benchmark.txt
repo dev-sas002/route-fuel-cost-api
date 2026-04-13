@@ -1,0 +1,24 @@
+$ python manage.py benchmark_planner
+Optimiser (plan_fuel_stops)
+  candidates   best of N (ms)
+       1,000              0.9
+      10,000             10.9
+     100,000            132.2
+
+Station lookup (50-mile radius)
+    stations    grid (ms)   linear (ms)   speedup
+       1,000        0.003         0.486      151x
+      10,000        0.011         4.863      431x
+     100,000        0.130        48.768      375x
+
+End to end (LA to NYC, offline provider)
+route distance      : 2,934.7 miles
+catalogue size      : 100,000 stations
+index build         : 19.0 ms
+corridor match      : 58.6 ms
+candidates found    : 4,820
+optimise            : 6.0 ms
+fuel stops          : 10
+total fuel cost     : $609.37
+
+Machine: Apple Silicon (arm64) macOS, CPython 3.14.5, single process, no database.

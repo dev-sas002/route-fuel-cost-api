@@ -1,0 +1,41 @@
+.git
+.gitignore
+.github
+
+# Virtual environments
+project_venv/
+.venv/
+.venv_uplift/
+venv/
+env/
+
+# Python build and cache artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local state and secrets
+.env
+.env.*
+!.env.example
+*.sqlite3
+db.sqlite3
+staticfiles/
+
+# Developer docs and captures
+docs/
+*.md
+!README.md
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
