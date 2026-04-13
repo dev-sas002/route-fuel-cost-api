@@ -1,7 +1,7 @@
 """Measure the two hot paths: station lookup and fuel-stop optimisation.
 
-The numbers quoted in the README's "Design notes" come from this command, so
-anyone can reproduce them:
+The numbers quoted in the README's performance section come from this
+command, so anyone can reproduce them:
 
     python manage.py benchmark_planner
 

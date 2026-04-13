@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.domain.types import GeoPoint
+from api.routing import get_route_provider
 from api.serializers import RouteRequestSerializer, serialize_route_plan
 from api.services import FuelRoutePlanner
 
@@ -42,8 +43,6 @@ class HealthAPIView(APIView):
     """Liveness probe. Reports which routing provider is active and configured."""
 
     def get(self, request):
-        from api.routing import get_route_provider
-
         provider = get_route_provider()
         return Response(
             {

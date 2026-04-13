@@ -1,7 +1,7 @@
 """Django settings for the fuel-optimised route planner.
 
 Every environment-specific value is read from the environment (optionally via a
-``.env`` file) so the same image runs in development, CI and production.
+``.env`` file) so the same image runs in development and production.
 Defaults are chosen so that ``python manage.py test`` works on a clean checkout
 with no database server and no OpenRouteService key.
 """

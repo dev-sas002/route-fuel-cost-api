@@ -2,11 +2,11 @@
 name = "fuel-route-planner"
 version = "1.0.0"
 description = "Django REST API that plans a driving route and the cheapest fuel stops along it."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 extend-exclude = ["*/migrations/*", "project_venv", ".venv", ".venv_uplift"]
 
 [tool.ruff.lint]
