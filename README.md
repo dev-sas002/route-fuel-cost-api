@@ -37,7 +37,7 @@ and an exchange argument converts any optimal plan into this one without increas
 "cheapest station in `[l, r]`" in O(1) after an O(n log n) build; the window edge is a binary search
 and every step moves strictly forward — **O(n log n)** for *n* candidate stops. Rescanning the
 window at each station instead is O(n·|W|), quadratic in exactly the cross-country case this is
-built for. All of it is [`api/optimizer/fuel.py`](api/optimizer/fuel.py) — 282 lines, a third of
+built for. All of it is [`api/optimizer/fuel.py`](api/optimizer/fuel.py) — 289 lines, a third of
 them that argument written out in the docstring.
 
 ## Not taking the optimiser's word for it
@@ -58,11 +58,11 @@ left to the random sweep:
 | Several equally cheap stations | Deterministic: the farthest, so no redundant stop | `test_equal_prices_resolve_to_the_farthest_station` |
 | A station exactly at the range limit | Reachable (inclusive, epsilon-tolerant) | `test_exactly_at_range_is_reachable` |
 
-`python manage.py test` runs 120 tests in well under a second. None touch the network — the ORS
-client is driven by a fake `requests` session from `api/tests/doubles.py` — and the suite passes with
-no `ORS_API_KEY` set, one asserting a missing key yields 503 rather than a traceback. Coverage of
-application code is 99% (667 statements, 7 missed), captured with the `ruff` run in
-[`docs/test-run.txt`](docs/test-run.txt).
+`python manage.py test` runs 124 tests in well under a second, on SQLite by default and unchanged
+against PostgreSQL 17. None touch the network — the ORS client is driven by a fake `requests` session
+from `api/tests/doubles.py` — and the suite passes with no `ORS_API_KEY` set, one asserting a missing
+key yields 503 rather than a traceback. Coverage of application code is 99% (672 statements, 7
+missed), captured with the `ruff` run in [`docs/test-run.txt`](docs/test-run.txt).
 
 ## From two coordinates to a fuel plan
 
@@ -126,29 +126,42 @@ approximations, not road distances. When the tank cannot bridge a stretch, it sa
  "detail": {"from_miles": 786.93, "to_miles": 1381.14, "gap_miles": 594.21, "tank_range_miles": 500.0}}
 ```
 
-There is no front end; the only visual surface is DRF's own browsable API, showing
-[the plan](docs/screenshots/browsable-api-route-plan.png) and
-[the 422](docs/screenshots/browsable-api-unreachable.png).
+There is no front end. Opening `/api/route/` in a browser shows DRF's generic browsable form, which
+is handy for poking at the endpoint but is not a product UI.
 
 ## Running it
 
+The one-command path is Docker Compose:
+
+```bash
+docker compose up --build
+curl -s http://localhost:8370/api/health/
+```
+
+That builds the image, starts PostgreSQL 17 (on host port 8371, so it never collides with a local
+server), migrates, seeds the 50 sample stations and serves the API with gunicorn on
+`localhost:8370`. With no `ORS_API_KEY` in the environment it uses the offline provider, so the stack
+is fully usable without any account. `docker compose down -v` removes it again, data included.
+
+Without Docker you need Python 3.12 (`.python-version`; Django 6.1 does not support older versions):
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python manage.py migrate                 # SQLite by default, no server needed
 python manage.py load_fuel_data          # seeds fuel_prices_sample.csv
+python manage.py test                    # or: pytest --cov=api; ruff check .
 ROUTE_PROVIDER=api.routing.static.StaticRouteProvider python manage.py runserver 8370
 ```
 
-A working API with no key and no database server. For real road routing set `ORS_API_KEY` and leave
-`ROUTE_PROVIDER` at its default; without a key the provider returns 503 rather than failing obscurely.
-**No key is committed anywhere** — every `ORS_API_KEY` in the tree and in the history is empty or a
-placeholder, and the tests never need one.
+For real road routing, copy `.env.example` to `.env`, set `ORS_API_KEY` and leave `ROUTE_PROVIDER`
+at its default; without a key that provider answers 503 rather than failing obscurely. No key is
+committed anywhere, and the tests never need one.
 
-`docker compose up --build` is authored to do the same end to end (Postgres 17, migrate, seed,
-gunicorn, API on `localhost:8370`, offline provider by default), but **the image has not been built or
-booted** — only `docker compose config -q` was run, so treat that path as unverified.
-`requirements-dev.txt` adds pytest, pytest-cov and ruff; `benchmark_planner` rebuilds the table below.
+`load_fuel_data` is safe to re-run: stations are matched on name, city, state, zip code and fuel
+type, so a fresher file updates prices instead of adding rows. A station listed twice in one file
+keeps its last price, and `--truncate` replaces the catalogue outright. `benchmark_planner` rebuilds
+the table below.
 
 ## Making it fast against a 100,000-station catalogue
 
@@ -161,19 +174,19 @@ dense one finds, and `test_matches_a_brute_force_scan` pins the grid against a l
 responses are cached on endpoints rounded to ~11 m, so re-planning the same trip with a different MPG
 costs no quota; migration `0002` indexes `(latitude, longitude)` and makes station identity unique.
 
-From [`docs/benchmark.txt`](docs/benchmark.txt) — `manage.py benchmark_planner`, Apple Silicon,
-CPython 3.14.5, no database:
+From [`docs/benchmark.txt`](docs/benchmark.txt) — `manage.py benchmark_planner` in a
+`python:3.12-slim` container with two CPUs, no database:
 
 | Catalogue | Grid lookup (50 mi) | Linear scan | Speed-up |
 | --- | --- | --- | --- |
-| 1,000 stations | 0.003 ms | 0.486 ms | ~151x |
-| 10,000 stations | 0.011 ms | 4.863 ms | ~431x |
-| 100,000 stations | 0.130 ms | 48.768 ms | ~375x |
+| 1,000 stations | 0.004 ms | 0.499 ms | ~138x |
+| 10,000 stations | 0.012 ms | 5.328 ms | ~457x |
+| 100,000 stations | 0.139 ms | 52.147 ms | ~376x |
 
 End to end on that run, LA to NYC (2,934.7 miles) against a synthetic 100,000-station catalogue:
-index build 19.0 ms once, corridor matching 58.6 ms finding 4,820 candidates, optimisation 6.0 ms. A
-re-run on the same machine reproduces these within a few percent, and the command is committed, so
-the table is checkable rather than asserted. What remains is the outbound ORS call, network-bound and
+index build 20.9 ms once, corridor matching 66.0 ms finding 4,820 candidates, optimisation 8.7 ms.
+The data is seeded, so the candidate count and the plan are identical on every run; the command is
+committed, so the table is checkable rather than asserted. What remains is the outbound ORS call, network-bound and
 already cached; beyond an in-memory catalogue the next step is PostGIS with a GiST index.
 
 ## The shapes that move through it
@@ -248,3 +261,7 @@ and no strategy hierarchy for an optimiser whose second implementation could onl
 * **The station index is per process**, so with several gunicorn workers a price change can take up to
   `STATION_INDEX_CACHE_SECONDS` to appear everywhere. A shared cache backend fixes that for the route
   cache, not the index.
+
+## License
+
+MIT, see [`LICENSE`](LICENSE).

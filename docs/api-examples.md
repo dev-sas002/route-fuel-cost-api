@@ -1,16 +1,17 @@
 # Captured API output
 
-Every block below was produced by running the commands shown against a local
-server started with:
+Every block below was produced by running the commands shown against the
+`docker compose up --build` stack (Django 6.1, PostgreSQL 17, gunicorn, the 50
+seeded sample stations) with one extra environment variable on the `web`
+service:
 
 ```
-ROUTE_PROVIDER=api.routing.static.StaticRouteProvider \
-  MAX_ROUTE_POINTS_RETURNED=6 python manage.py runserver 127.0.0.1:8370
+MAX_ROUTE_POINTS_RETURNED=6
 ```
 
-`MAX_ROUTE_POINTS_RETURNED=6` is set only so the `route` polyline fits on the
-page; the default is 2000. The offline `StaticRouteProvider` is used so the
-capture is reproducible without an OpenRouteService key.
+It is set only so the `route` polyline fits on the page; the default is 2000.
+Compose selects the offline `StaticRouteProvider` when no OpenRouteService key
+is present, so the capture is reproducible without one.
 
 ## Health check
 
@@ -200,8 +201,9 @@ $ curl -s -X POST http://localhost:8370/api/route/ \
 
 ## No OpenRouteService key configured (HTTP 503)
 
-Captured from a second server started with the ORS provider and an empty key:
-`ROUTE_PROVIDER=api.routing.openrouteservice.OpenRouteServiceProvider ORS_API_KEY= python manage.py runserver 127.0.0.1:8372`
+Captured from a second gunicorn started inside the `web` container with the ORS
+provider and an empty key:
+`ROUTE_PROVIDER=api.routing.openrouteservice.OpenRouteServiceProvider ORS_API_KEY= gunicorn map_API.wsgi:application --bind 127.0.0.1:8372`
 
 ```console
 $ curl -s http://localhost:8372/api/health/ | python -m json.tool
