@@ -89,6 +89,21 @@ class LoadFuelDataCommandTests(TestCase):
         self.assertEqual(FuelStation.objects.count(), 1)
         self.assertEqual(FuelStation.objects.get().price_per_gallon, 3.99)
 
+    def test_a_station_repeated_in_one_file_keeps_its_last_price(self):
+        path = write_csv(
+            [
+                "Shell,LA,CA,90001,34.05,-118.24,Regular,4.59",
+                "Shell,LA,CA,90001,34.05,-118.24,Regular,4.19",
+                "Shell,LA,CA,90001,34.05,-118.24,Diesel,5.09",
+            ]
+        )
+        self.addCleanup(path.unlink)
+        output = self.run_command(path=str(path))
+        self.assertIn("Loaded 2 station(s)", output)
+        self.assertIn("Collapsed 1 repeated row(s)", output)
+        regular = FuelStation.objects.get(fuel_type="Regular")
+        self.assertEqual(regular.price_per_gallon, 4.19)
+
     def test_truncate_replaces_the_catalogue(self):
         self.run_command()
         path = write_csv(["Solo,LA,CA,90001,34.05,-118.24,Regular,4.59"])

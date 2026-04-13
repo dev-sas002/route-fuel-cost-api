@@ -52,6 +52,13 @@ class Command(BaseCommand):
         if not stations:
             raise CommandError(f"No usable rows in {path}")
 
+        # PostgreSQL rejects an upsert batch that touches one row twice ("ON
+        # CONFLICT DO UPDATE command cannot affect row a second time"), so a
+        # file that repeats a station keeps only its last price.
+        latest = {
+            (s.name, s.city, s.state, s.zip_code, s.fuel_type): s for s in stations
+        }
+        duplicates = len(stations) - len(latest)
         rows = [
             FuelStation(
                 station_name=station.name,
@@ -63,7 +70,7 @@ class Command(BaseCommand):
                 longitude=station.location.lng,
                 price_per_gallon=station.price_per_gallon,
             )
-            for station in stations
+            for station in latest.values()
         ]
 
         with transaction.atomic():
@@ -79,6 +86,10 @@ class Command(BaseCommand):
             )
 
         reset_station_index_cache()
+        if duplicates:
+            self.stdout.write(
+                f"Collapsed {duplicates} repeated row(s); the last price won."
+            )
         self.stdout.write(
             self.style.SUCCESS(
                 f"Loaded {len(rows)} station(s) from {path}; "
