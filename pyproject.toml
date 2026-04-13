@@ -1,0 +1,42 @@
+[project]
+name = "fuel-route-planner"
+version = "1.0.0"
+description = "Django REST API that plans a driving route and the cheapest fuel stops along it."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-exclude = ["*/migrations/*", "project_venv", ".venv", ".venv_uplift"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "C4",  # comprehensions
+    "DJ",  # django
+    "SIM", # simplify
+    "RUF",
+]
+ignore = [
+    "B008",    # DRF/Django idioms rely on calls in defaults
+    "RUF012",  # Django class attributes are not ClassVar-annotated by convention
+]
+
+[tool.ruff.lint.per-file-ignores]
+"api/tests/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "map_API"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "map_API.settings"
+python_files = ["test_*.py"]
+testpaths = ["api/tests"]
+addopts = "-q"
