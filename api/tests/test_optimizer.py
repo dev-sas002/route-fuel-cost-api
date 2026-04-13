@@ -143,6 +143,23 @@ class UnreachableTests(SimpleTestCase):
         with self.assertRaises(UnreachableDestination):
             plan(stops, distance=400, tank=200)
 
+    def test_a_partial_starting_tank_is_named_as_the_limit(self):
+        with self.assertRaises(UnreachableDestination) as ctx:
+            plan_fuel_stops(
+                [make_stop(150, 3.00)],
+                route_distance_miles=300,
+                tank_range_miles=200,
+                vehicle_mpg=10.0,
+                start_range_miles=100,
+            )
+        message = str(ctx.exception)
+        self.assertIn("150.0 mile gap exceeds the 100.0 mile starting range", message)
+
+    def test_full_tank_gap_still_names_the_tank_range(self):
+        with self.assertRaises(UnreachableDestination) as ctx:
+            plan([make_stop(300, 3.00)], distance=400, tank=200)
+        self.assertIn("exceeds the 200.0 mile tank range", str(ctx.exception))
+
     def test_no_stations_at_all_on_a_long_route(self):
         with self.assertRaises(UnreachableDestination):
             plan([], distance=900, tank=500)

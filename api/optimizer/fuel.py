@@ -231,11 +231,18 @@ def plan_fuel_stops(
         reach = fuel if price == inf else tank_range_miles
         window_end = bisect_right(positions, positions[index] + reach + EPSILON) - 1
         if window_end <= index:
+            # From the origin the limit is a possibly partial starting tank,
+            # so name the figure that was actually exceeded.
+            limit = (
+                f"{reach:.1f} mile starting range"
+                if reach < tank_range_miles
+                else f"{tank_range_miles:.1f} mile tank range"
+            )
             raise UnreachableDestination(
                 "No fuel stop is reachable between mile "
                 f"{positions[index]:.1f} and mile {positions[index + 1]:.1f}: "
                 f"the {positions[index + 1] - positions[index]:.1f} mile gap "
-                f"exceeds the {tank_range_miles:.1f} mile tank range.",
+                f"exceeds the {limit}.",
                 from_miles=positions[index],
                 to_miles=positions[index + 1],
                 tank_range_miles=tank_range_miles,
