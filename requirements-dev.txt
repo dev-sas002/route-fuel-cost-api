@@ -1,10 +1,10 @@
 -r requirements.txt
 
 # Linting and formatting.
-ruff==0.16.8
+ruff==0.17.4
 
 # The suite also runs under Django's own runner (`python manage.py test`);
 # pytest adds watch mode and coverage.
-pytest==9.1.1
+pytest==9.2.0
 pytest-django==4.14.0
 pytest-cov==7.1.0
