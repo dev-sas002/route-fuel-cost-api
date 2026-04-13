@@ -60,7 +60,7 @@ class CsvFuelPriceSource:
                 city=(row.get("city") or "").strip(),
                 state=(row.get("state") or "").strip(),
                 fuel_type=(row.get("fuel_type") or "").strip(),
-                address=(row.get("address") or row.get("zip_code") or "").strip(),
+                zip_code=(row.get("zip_code") or "").strip(),
             )
         except (TypeError, ValueError) as exc:
             logger.warning("Skipping %s line %s: %s", self.path, line_number, exc)

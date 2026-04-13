@@ -41,6 +41,15 @@ class CsvSourceTests(SimpleTestCase):
             list(CsvFuelPriceSource(path).stream())
         self.assertIn("latitude", str(ctx.exception))
 
+    def test_an_address_column_does_not_replace_the_zip_code(self):
+        path = write_csv(
+            ["Shell,LA,CA,90001,34.05,-118.24,Regular,4.59,1200 W Olympic Blvd"],
+            header=f"{HEADER},address",
+        )
+        self.addCleanup(path.unlink)
+        (station,) = CsvFuelPriceSource(path).stream()
+        self.assertEqual(station.zip_code, "90001")
+
     def test_unparseable_rows_are_skipped_not_fatal(self):
         path = write_csv(
             [
@@ -122,7 +131,7 @@ class DatabaseSourceTests(TestCase):
         stations = list(DatabaseFuelPriceSource().load())
         self.assertEqual(len(stations), 1)
         self.assertEqual(stations[0].name, "Shell")
-        self.assertEqual(stations[0].address, "90001")
+        self.assertEqual(stations[0].zip_code, "90001")
         self.assertAlmostEqual(stations[0].location.lat, 34.05)
 
 

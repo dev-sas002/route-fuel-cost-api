@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 station_name=station.name,
                 city=station.city,
                 state=station.state,
-                zip_code=station.address,
+                zip_code=station.zip_code,
                 fuel_type=station.fuel_type,
                 latitude=station.location.lat,
                 longitude=station.location.lng,

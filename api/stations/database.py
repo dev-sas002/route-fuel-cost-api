@@ -37,5 +37,5 @@ class DatabaseFuelPriceSource:
                 city=row.city,
                 state=row.state,
                 fuel_type=row.fuel_type,
-                address=row.zip_code,
+                zip_code=row.zip_code,
             )

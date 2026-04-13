@@ -59,7 +59,7 @@ class Station:
     city: str = ""
     state: str = ""
     fuel_type: str = ""
-    address: str = ""
+    zip_code: str = ""
 
 
 @dataclass(frozen=True, slots=True)
