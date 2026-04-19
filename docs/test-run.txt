@@ -1,0 +1,28 @@
+$ python manage.py test
+Creating test database for alias 'default'...
+........................................................................................................................
+----------------------------------------------------------------------
+Ran 120 tests in 0.078s
+
+OK
+Destroying test database for alias 'default'...
+Found 120 test(s).
+System check identified no issues (0 silenced).
+
+$ pytest --cov=api --cov-report=term
+api/views.py                                                19      0   100%
+----------------------------------------------------------------------------
+TOTAL                                                     1515     83    95%
+120 passed in 0.54s
+
+# Application code only (tests, migrations and the benchmark command omitted):
+$ coverage report --omit="api/tests/*,api/migrations/*,api/management/commands/benchmark_planner.py"
+api/views.py                                   19      0   100%
+---------------------------------------------------------------
+TOTAL                                         667      7    99%
+
+$ ruff check .
+All checks passed!
+
+$ ruff format --check .
+47 files already formatted
